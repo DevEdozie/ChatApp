@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "965715167772",
+    "project_id": "chatapp-5a72f",
+    "storage_bucket": "chatapp-5a72f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:965715167772:android:baa8fd0d8bf6635040add9",
+        "android_client_info": {
+          "package_name": "com.edozie.chatapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDK1nzXfEI4ruB63jpG9UNGCEAHP5ORyBs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
