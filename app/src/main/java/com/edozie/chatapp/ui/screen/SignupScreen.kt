@@ -1,5 +1,6 @@
 package com.edozie.chatapp.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -40,20 +42,28 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.edozie.chatapp.ui.widget.CustomTextField
-import com.edozie.chatapp.utils.AuthState
+import com.edozie.chatapp.util.AuthState
+import com.edozie.chatapp.util.NetworkObserver
 import com.edozie.chatapp.viewmodel.AuthViewModel
 
 
 @Composable
-fun SignupScreen(navController: NavController, vm: AuthViewModel = hiltViewModel()) {
+fun SignupScreen(
+    navController: NavController,
+    vm: AuthViewModel = hiltViewModel(),
+    networkObserver: NetworkObserver
+) {
 
     val state by vm.state.collectAsState()
     val email by vm.email.collectAsState()
     val password by vm.password.collectAsState()
     val confirmPassword by vm.confirm_password.collectAsState()
+    val context = LocalContext.current
 
     // Local UI state for validation error
+    var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -85,9 +95,14 @@ fun SignupScreen(navController: NavController, vm: AuthViewModel = hiltViewModel
         // Email field
         CustomTextField(
             value = email,
-            onValueChange = { vm.onEmailChange(it) },
+            onValueChange = {
+                vm.onEmailChange(it)
+                emailError = null
+            },
             placeholder = "Enter your email"
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        emailError?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             "Password",
@@ -101,12 +116,15 @@ fun SignupScreen(navController: NavController, vm: AuthViewModel = hiltViewModel
             value = password,
             onValueChange = {
                 vm.onPasswordChange(it)
+                passwordError = null
                 // clear error when user retypes
-                if (passwordError != null) passwordError = null
+                if (confirmPasswordError != null) confirmPasswordError = null
             },
             placeholder = "Create your password",
             isPassword = true
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        passwordError?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
         Spacer(modifier = Modifier.height(4.dp))
         // Confirm field
         CustomTextField(
@@ -114,15 +132,16 @@ fun SignupScreen(navController: NavController, vm: AuthViewModel = hiltViewModel
             onValueChange = {
                 vm.onConfirmPasswordChange(it)
                 // clear error when user retypes
-                if (passwordError != null) passwordError = null
+//                if (confirmPasswordError != null) confirmPasswordError = null
+                confirmPasswordError = null
             },
             placeholder = "Confirm password",
             isPassword = true
         )
         // Show mismatch error
-        passwordError?.let { errorMsg ->
+        confirmPasswordError?.let { errorMsg ->
             Spacer(Modifier.height(4.dp))
-            Text(errorMsg, color = Color.Red, fontSize = 14.sp)
+            Text(errorMsg, color = Color.Red, fontSize = 12.sp)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -145,17 +164,43 @@ fun SignupScreen(navController: NavController, vm: AuthViewModel = hiltViewModel
             // "Create Account" button
             Button(
                 onClick = {
+                    // Empty‑field check (email)
+                    if (email.isBlank()) {
+                        emailError = "Email cannot be empty"
+                        return@Button
+                    }
+                    // Empty‑field check (password)
+                    if (password.isBlank()) {
+                        passwordError = "Password cannot be empty"
+                        return@Button
+                    }
+
+                    // Empty‑field check (confirm password)
+                    if (confirmPassword.isBlank()) {
+                        confirmPasswordError = "Confirm password cannot be empty"
+                        return@Button
+                    }
+
+                    // Connectivity check
+                    if (!networkObserver.isOnline()) {
+                        Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
                     // Validate passwords match before calling ViewModel
                     if (password != confirmPassword) {
-                        passwordError = "Passwords do not match"
-                    } else {
-                        passwordError = null
-                        vm.signUp(email, password)
+                        confirmPasswordError = "Passwords do not match"
+                        return@Button
                     }
+
+                    // All good
+                    vm.signUp(email.trim(), password)
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
+                enabled = state != AuthState.Loading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -199,7 +244,12 @@ fun SignupScreen(navController: NavController, vm: AuthViewModel = hiltViewModel
 @Composable
 fun SignupScreenPreview() {
     val navController = rememberNavController()
-    SignupScreen(navController = navController)
+
+    // Create a NetworkObserver from the preview's Context
+    val context = LocalContext.current.applicationContext
+    val networkObserver = NetworkObserver(context)
+
+    SignupScreen(navController = navController, networkObserver = networkObserver)
 }
 
 

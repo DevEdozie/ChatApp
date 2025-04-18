@@ -1,5 +1,6 @@
 package com.edozie.chatapp.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -40,16 +42,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.edozie.chatapp.ui.widget.CustomTextField
-import com.edozie.chatapp.utils.AuthState
+import com.edozie.chatapp.util.AuthState
+import com.edozie.chatapp.util.NetworkObserver
 import com.edozie.chatapp.viewmodel.AuthViewModel
 
 
 @Composable
-fun LoginScreen(navController: NavController, vm: AuthViewModel = hiltViewModel()) {
+fun LoginScreen(
+    navController: NavController,
+    vm: AuthViewModel = hiltViewModel(),
+    networkObserver: NetworkObserver
+) {
 
     val state by vm.state.collectAsState()
     val email by vm.email.collectAsState()
     val password by vm.password.collectAsState()
+    val context = LocalContext.current
+
+    // Local UI state for validation errors
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -81,7 +93,10 @@ fun LoginScreen(navController: NavController, vm: AuthViewModel = hiltViewModel(
         // Email field
         CustomTextField(
             value = email,
-            onValueChange = { vm.onEmailChange(it) },
+            onValueChange = {
+                vm.onEmailChange(it)
+                emailError = null
+            },
             placeholder = "Enter your email"
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -95,19 +110,21 @@ fun LoginScreen(navController: NavController, vm: AuthViewModel = hiltViewModel(
         // Password field
         CustomTextField(
             value = password,
-            onValueChange = { vm.onPasswordChange(it) },
+            onValueChange = {
+                vm.onPasswordChange(it)
+                passwordError = null
+            },
             placeholder = "Enter your password",
             isPassword = true
         )
         Spacer(modifier = Modifier.height(20.dp))
-//        authError?.let {
-//            Text(text = it, color = Color.Red)
-//        }
+
         when (state) {
             is AuthState.Error -> Text((state as AuthState.Error).message, color = Color.Red)
             is AuthState.Authenticated -> LaunchedEffect(Unit) {
                 navController.navigate("home") { popUpTo("login") { inclusive = true } }
             }
+
             else -> {}
         }
         // BUTTON SECTION
@@ -119,10 +136,28 @@ fun LoginScreen(navController: NavController, vm: AuthViewModel = hiltViewModel(
         ) {
             // "Login" button
             Button(
-                onClick = { vm.login(email, password) },
+                onClick = {
+                    // Empty‑field check (email)
+                    if (email.isBlank()) {
+                        emailError = "Email field can not be empty"
+                        return@Button
+                    }
+                    // Empty‑field check (password)
+                    if (password.isBlank()) {
+                        passwordError = "Password field can not be empty"
+                        return@Button
+                    }
+                    // Connectivity check
+                    if (!networkObserver.isOnline()) {
+                        Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    vm.login(email.trim(), password)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
+                enabled = state != AuthState.Loading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -157,8 +192,6 @@ fun LoginScreen(navController: NavController, vm: AuthViewModel = hiltViewModel(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-
-
     }
 }
 
@@ -166,8 +199,16 @@ fun LoginScreen(navController: NavController, vm: AuthViewModel = hiltViewModel(
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
-    LoginScreen(navController = navController)
+    // Create a NetworkObserver from the preview's Context
+    val context = LocalContext.current.applicationContext
+    val networkObserver = NetworkObserver(context)
+
+    LoginScreen(
+        navController = navController,
+        networkObserver = networkObserver
+    )
 }
+
 
 
 

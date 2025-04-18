@@ -1,4 +1,4 @@
-package com.edozie.chatapp.utils
+package com.edozie.chatapp.util
 
 import com.google.firebase.auth.FirebaseUser
 

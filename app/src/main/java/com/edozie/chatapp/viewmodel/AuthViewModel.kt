@@ -6,8 +6,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.edozie.chatapp.remote.repository.AuthRepository
-import com.edozie.chatapp.utils.AuthState
-import com.google.rpc.context.AttributeContext.Auth
+import com.edozie.chatapp.util.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
