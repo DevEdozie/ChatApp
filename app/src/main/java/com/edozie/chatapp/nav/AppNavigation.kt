@@ -21,7 +21,7 @@ fun AppNavigation(
         composable("splash") { SplashScreen(navController) }
         composable("login") { LoginScreen(navController, networkObserver = networkObserver) }
         composable("signup") { SignupScreen(navController, networkObserver = networkObserver) }
-        composable("home") { HomeScreen(navController) }
+        composable("home") { HomeScreen(networkObserver) }
     }
 
 }

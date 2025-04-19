@@ -35,14 +35,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.edozie.chatapp.R
+import com.edozie.chatapp.ui.widget.CustomBottomNavigationBar
+import com.edozie.chatapp.util.CustomBottomNavBar
+import com.edozie.chatapp.util.NetworkObserver
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(networkObserver: NetworkObserver) {
+    val navController = rememberNavController()
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val userCurrentRoute = currentBackStackEntry?.destination?.route
 
+    val showBottomBar = when {
+        userCurrentRoute == CustomBottomNavBar.Chats.route -> true
+        userCurrentRoute == CustomBottomNavBar.Profile.route -> true
+        else -> false
+    }
 
     Scaffold(
         topBar = {
@@ -56,21 +70,47 @@ fun HomeScreen(navController: NavController) {
                 }
             )
         },
+        bottomBar = {
+            if (showBottomBar) {
+                CustomBottomNavigationBar(
+                    currentDestination = userCurrentRoute ?: "splash",
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            // Avoid multiple copies of the same destination
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+        },
+
 
         ) { paddingValues ->
 
-
-        Box(
+        NavHost(
+            navController = navController,
+//            startDestination = "splash",
+            startDestination = CustomBottomNavBar.Chats.route,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues)
         ) {
-            Text(
-                text = "Welcome",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
+            composable("splash") { SplashScreen(navController) }
+            composable("login") { LoginScreen(navController, networkObserver = networkObserver) }
+            composable("signup") { SignupScreen(navController, networkObserver = networkObserver) }
+            composable(CustomBottomNavBar.Chats.route) {
+                ChatListScreen(
+                    navController,
+                    networkObserver
+                )
+            }
+            composable(CustomBottomNavBar.Profile.route) {
+                ProfileScreen(
+                    navController,
+                    networkObserver
+                )
+            }
         }
     }
 }
@@ -79,6 +119,5 @@ fun HomeScreen(navController: NavController) {
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
-    val navController = rememberNavController()
-    HomeScreen(navController = navController)
+
 }
