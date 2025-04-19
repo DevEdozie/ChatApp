@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.edozie.chatapp.nav.AppNavigation
+import com.edozie.chatapp.ui.screen.HomeScreen
 import com.edozie.chatapp.util.NetworkObserver
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -18,7 +19,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AppNavigation(networkObserver)
+            HomeScreen(networkObserver)
         }
     }
 }
