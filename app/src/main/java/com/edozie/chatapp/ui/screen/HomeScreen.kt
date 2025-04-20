@@ -99,6 +99,7 @@ fun HomeScreen(networkObserver: NetworkObserver) {
             composable("splash") { SplashScreen(navController) }
             composable("login") { LoginScreen(navController, networkObserver = networkObserver) }
             composable("signup") { SignupScreen(navController, networkObserver = networkObserver) }
+            composable("chat") { ChatScreen() }
             composable(CustomBottomNavBar.Chats.route) {
                 ChatListScreen(
                     navController,
