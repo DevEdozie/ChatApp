@@ -8,6 +8,6 @@ sealed class CustomBottomNavBar(
     val icon: Int
 ) {
 
-    object Chats : CustomBottomNavBar("chats", "Chats", R.drawable.chats_ic)
+    object Chats : CustomBottomNavBar("chats", "Chats", R.drawable.chat_ic)
     object Profile : CustomBottomNavBar("profile", "Profile", R.drawable.profile_ic)
 }
