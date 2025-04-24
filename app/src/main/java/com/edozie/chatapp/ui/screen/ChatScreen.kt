@@ -48,7 +48,7 @@ fun ChatScreen(vm: ChatViewModel, authVm: AuthViewModel = hiltViewModel()) {
     ) {
         LazyColumn(
             Modifier
-                .weight(0.9f)
+                .weight(0.8f)
                 .padding(8.dp),
             reverseLayout = false
         ) {
@@ -65,8 +65,7 @@ fun ChatScreen(vm: ChatViewModel, authVm: AuthViewModel = hiltViewModel()) {
         Surface(
             color = Color.White,
             modifier = Modifier
-//                .height(56.dp)
-                .weight(0.1f)
+                .weight(0.2f)
                 .fillMaxWidth(),
 
             ) {

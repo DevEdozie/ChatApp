@@ -25,6 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,15 +59,22 @@ fun HomeScreen(networkObserver: NetworkObserver) {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val userCurrentRoute = currentBackStackEntry?.destination?.route
 
-    val shouldShowAppIcon = when {
-        userCurrentRoute == CustomBottomNavBar.Chats.route -> true
-        else -> false
+    val screenTitle = when (userCurrentRoute) {
+        CustomBottomNavBar.Chats.route -> "Chats"
+        CustomBottomNavBar.Profile.route -> "Profile"
+        else -> ""
     }
 
-    val shouldShowBackArrow = when {
-        userCurrentRoute?.startsWith("chat/") == true -> true
-        else -> false
-    }
+    val shouldShowTitle = userCurrentRoute == CustomBottomNavBar.Chats.route ||
+            userCurrentRoute == CustomBottomNavBar.Profile.route
+
+
+    val shouldShowAppIcon =
+        userCurrentRoute == CustomBottomNavBar.Chats.route
+
+
+    val shouldShowBackArrow =
+        userCurrentRoute?.startsWith("chat/") == true
 
     val showBottomBar = when {
         userCurrentRoute == CustomBottomNavBar.Chats.route -> true
@@ -87,12 +96,23 @@ fun HomeScreen(networkObserver: NetworkObserver) {
                     }
                 },
                 title = {
-                    if (shouldShowAppIcon) {
-                        Image(
-                            painter = painterResource(id = R.drawable.chat_app_logo_ic),
-                            contentDescription = "App Logo",
-                            modifier = Modifier.size(40.dp)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (shouldShowAppIcon) {
+                            Image(
+                                painter = painterResource(id = R.drawable.chat_app_logo_ic),
+                                contentDescription = "App Logo",
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                        }
+
+                        if (shouldShowTitle) {
+                            Text(
+                                text = screenTitle,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.Black
+                            )
+                        }
                     }
                 }
             )
@@ -127,16 +147,18 @@ fun HomeScreen(networkObserver: NetworkObserver) {
             composable("login") { LoginScreen(navController, networkObserver = networkObserver) }
             composable("signup") { SignupScreen(navController, networkObserver = networkObserver) }
             composable(
-                "chat/{chatId}/{otherEmail}",
+                "chat/{chatId}/{otherEmail}/{otherUid}",
                 arguments = listOf(
                     navArgument("chatId") { type = NavType.StringType },
-                    navArgument("otherEmail") { type = NavType.StringType })
+                    navArgument("otherEmail") { type = NavType.StringType },
+                    navArgument("otherUid") { type = NavType.StringType }),
             ) { backStack ->
                 val vm: ChatViewModel = hiltViewModel()
                 val cid = backStack.arguments!!.getString("chatId")!!
-                val other = backStack.arguments!!.getString("otherEmail")!!
+                val otherE = backStack.arguments!!.getString("otherEmail")!!
+                val otherUid = backStack.arguments!!.getString("otherUid")!!
                 LaunchedEffect(cid) {
-                    vm.start(cid, other)
+                    vm.start(cid, otherE, otherUid)
                 }
                 ChatScreen(vm)
             }

@@ -31,17 +31,25 @@ class FirestoreChatRepository @Inject constructor(
             .whereArrayContains("participants", auth.uid!!)
             .addSnapshotListener { snap, _ ->
                 snap?.let {
+                    val meEmail = auth.currentUser!!.email!!
+                    val meUid = auth.uid!!
                     val entities = it.documents.map { doc ->
                         val parts = doc.get("participants") as List<String>
                         // find the *other* user's UID
-                        val otherUid = parts.first { it != auth.uid!! }
-                        // look up their email too
-                        val otherEmail = doc.getString("otherEmail") ?: ""
+                        // val otherUid = parts.first { it != auth.uid!! }
+                        val otherUid = parts.first { it != meUid }
+                        // pull the email list you stored
+                        val emails = doc.get("participantEmails") as List<String>
+//                        val otherEmail = emails.first { it != auth.currentUser!!.email }
+                        val otherEmail = emails.first { it != meEmail }
+
+
 
 
                         ChatThreadEntity(
                             id = doc.id,
                             otherUserEmail = otherEmail,
+                            otherUserId = otherUid,
                             lastMessage = doc.getString("lastMessage"),
                             timesStamp = doc.getLong("timestamp") ?: 0L
                         )
@@ -162,15 +170,18 @@ class FirestoreChatRepository @Inject constructor(
 //        return chatId
 //    }
 
-    override suspend fun createChatWith(otherEmail: String): String {
+    override suspend fun createChatWith(email: String): Pair<String, String> {
         val meUid = auth.uid!!
+        val myEmail = auth.currentUser!!.email
+
         // 1) Lookup the other user’s UID
         val userSnap = usersCol
-            .whereEqualTo("email", otherEmail)
+            .whereEqualTo("email", email)
             .get()
             .await()
         require(userSnap.documents.isNotEmpty()) { "User not found" }
         val otherUid = userSnap.documents.first().id
+
 
         // 2) See if we already have a chat between these two UIDs
         val existing = threadsCol
@@ -184,31 +195,34 @@ class FirestoreChatRepository @Inject constructor(
             }
         if (existing != null) {
             // reuse the existing chat
-            return existing.id
+            return existing.id to otherUid
         }
 
         // 3) No existing chat → create a fresh one
         val now = System.currentTimeMillis()
         val data = mapOf(
             "participants" to listOf(meUid, otherUid),
-            "timestamp"    to now,
-            "lastMessage"  to null
+            "participantEmails" to listOf(myEmail, email),
+            "timestamp" to now,
+            "lastMessage" to null
         )
         val ref = threadsCol.add(data).await()
         val chatId = ref.id
 
         // 4) Upsert into Room immediately so UI sees it right away
-        db.chatThreadDao().upsertThreads(listOf(
-            ChatThreadEntity(
-                id             = chatId,
-                otherUserEmail = otherEmail,
-                lastMessage    = null,
-                timesStamp      = now
+        db.chatThreadDao().upsertThreads(
+            listOf(
+                ChatThreadEntity(
+                    id = chatId,
+                    otherUserEmail = email,
+                    otherUserId = otherUid,
+                    lastMessage = null,
+                    timesStamp = now
+                )
             )
-        ))
-        return chatId
+        )
+        return chatId to otherUid
     }
-
 
 
 //    override suspend fun createChatWith(email: String): String {
@@ -253,13 +267,24 @@ class FirestoreChatRepository @Inject constructor(
             .update("lastMessage", text, "timestamp", now).await()
 
         // 2) Immediate Room upsert for the thread
+
         //    so that messages always have a parent:
-        val participants = threadsCol.document(chatId)
-            .get().await().get("participants") as List<String>
-        val otherEmail = participants.first { it != auth.currentUser!!.email }
+//        val participants = threadsCol.document(chatId)
+//            .get().await().get("participants") as List<String>
+//        val otherEmail = participants.first { it != auth.currentUser!!.email }
+        // 3) Read back the participants and participantEmails
+        val chatDoc = threadsCol.document(chatId).get().await()
+        val parts = chatDoc.get("participants") as List<String>
+        val emails = chatDoc.get("participantEmails") as List<String>
+        val meUid = auth.uid!!
+        val otherUid = parts.first { it != meUid }
+        val myEmail = auth.currentUser!!.email!!
+        val otherEmail = emails.first { it != myEmail }
+
         val entity = ChatThreadEntity(
             id = chatId,
             otherUserEmail = otherEmail,
+            otherUserId = otherUid,
             lastMessage = text,
             timesStamp = now
         )

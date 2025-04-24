@@ -30,11 +30,15 @@ class ChatListViewModel @Inject constructor(
         _showDialog.value = false
     }
 
-    fun createChatWith(email: String, onSuccess: (String) -> Unit, onError: (String) -> Unit = {}) {
+    fun createChatWith(
+        email: String,
+        onSuccess: (chatId: String, otherUid: String) -> Unit,
+        onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
             try {
-                val chatId = repo.createChatWith(email)
-                onSuccess(chatId)
+                val (chatId, otherUid) = repo.createChatWith(email)
+                onSuccess(chatId, otherUid)
             } catch (e: Exception) {
                 onError(e.message ?: "Error")
             } finally {

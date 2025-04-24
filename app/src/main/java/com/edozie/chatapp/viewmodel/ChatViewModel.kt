@@ -18,24 +18,26 @@ class ChatViewModel @Inject constructor(
     private val repo: ChatRepository,
     private val auth: AuthRepository,
     private val network: NetworkObserver
-): ViewModel() {
+) : ViewModel() {
 
     lateinit var chatId: String
     lateinit var otherEmail: String
+    private lateinit var otherUserId: String
 
     val messages = MutableStateFlow<List<MessageEntity>>(emptyList())
-    val typing   = MutableStateFlow(false)
+    val typing = MutableStateFlow(false)
 
-    fun start(chatId: String, otherEmail: String) {
+    fun start(chatId: String, otherEmail: String, otherUid: String) {
         this.chatId = chatId
         this.otherEmail = otherEmail
+        this.otherUserId = otherUid
 
         repo.observeMessages(chatId)
             .onEach { messages.value = it }
             .launchIn(viewModelScope)
 
         // observe typing of the other user
-        repo.observeTyping(chatId, auth.currentUser!!.uid!!)
+        repo.observeTyping(chatId, otherUserId)
             .onEach { typing.value = it }
             .launchIn(viewModelScope)
     }
