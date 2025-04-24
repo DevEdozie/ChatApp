@@ -43,6 +43,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.edozie.chatapp.ui.widget.CustomTextField
 import com.edozie.chatapp.util.AuthState
+import com.edozie.chatapp.util.CustomBottomNavBar
 import com.edozie.chatapp.util.NetworkObserver
 import com.edozie.chatapp.viewmodel.AuthViewModel
 
@@ -122,7 +123,11 @@ fun LoginScreen(
         when (state) {
             is AuthState.Error -> Text((state as AuthState.Error).message, color = Color.Red)
             is AuthState.Authenticated -> LaunchedEffect(Unit) {
-                navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                navController.navigate(CustomBottomNavBar.Chats.route) {
+                    popUpTo("login") {
+                        inclusive = true
+                    }
+                }
             }
 
             else -> {}
@@ -152,7 +157,7 @@ fun LoginScreen(
                         Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
-                    vm.login(email.trim(), password)
+                    vm.login(email.trim(), password.trim())
                 },
                 modifier = Modifier
                     .fillMaxWidth()

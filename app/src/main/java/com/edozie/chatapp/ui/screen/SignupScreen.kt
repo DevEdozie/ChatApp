@@ -188,13 +188,13 @@ fun SignupScreen(
                     }
 
                     // Validate passwords match before calling ViewModel
-                    if (password != confirmPassword) {
+                    if (password.trim() != confirmPassword.trim()) {
                         confirmPasswordError = "Passwords do not match"
                         return@Button
                     }
 
                     // All good
-                    vm.signUp(email.trim(), password)
+                    vm.signUp(email.trim(), password.trim())
 
                 },
                 modifier = Modifier

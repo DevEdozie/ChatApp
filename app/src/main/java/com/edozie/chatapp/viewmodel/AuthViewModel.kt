@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.edozie.chatapp.remote.repository.AuthRepository
 import com.edozie.chatapp.util.AuthState
+import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -75,6 +76,10 @@ class AuthViewModel @Inject constructor(
 
     fun onConfirmPasswordChange(newConfirmPassword: String) {
         _confirm_password.value = newConfirmPassword
+    }
+
+    fun getCurrentUser(): FirebaseUser? {
+        return repo.currentUser
     }
 
 

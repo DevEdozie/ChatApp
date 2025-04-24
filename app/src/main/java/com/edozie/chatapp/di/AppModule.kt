@@ -1,6 +1,8 @@
 package com.edozie.chatapp.di
 
 import android.content.Context
+import androidx.room.Room
+import com.edozie.chatapp.data.room.AppDatabase
 import com.edozie.chatapp.util.NetworkObserver
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,4 +31,11 @@ object AppModule {
     fun provideNetworkObserver(
         @ApplicationContext context: Context
     ): NetworkObserver = NetworkObserver(context)
+
+
+    @Provides @Singleton
+    fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "chat_db")
+            .fallbackToDestructiveMigration()
+            .build()
 }

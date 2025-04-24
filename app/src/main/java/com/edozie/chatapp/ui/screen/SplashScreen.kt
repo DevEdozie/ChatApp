@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.edozie.chatapp.R
+import com.edozie.chatapp.util.CustomBottomNavBar
 import kotlinx.coroutines.delay
 
 @Composable
@@ -26,7 +27,7 @@ fun SplashScreen(navController: NavController) {
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        delay(3000L) // Wait for 3 seconds
+        delay(2000L) // Wait for 3 seconds
 
         try {
             val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -34,7 +35,7 @@ fun SplashScreen(navController: NavController) {
 
 
             if (isLoggedIn) {
-                navController.navigate("home") {
+                navController.navigate(CustomBottomNavBar.Chats.route) {
                     popUpTo("splash") { inclusive = true }
                 }
             } else {

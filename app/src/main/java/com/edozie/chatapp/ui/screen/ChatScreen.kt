@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -17,6 +18,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,12 +29,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.edozie.chatapp.R
+import com.edozie.chatapp.ui.widget.MessageBubble
+import com.edozie.chatapp.viewmodel.AuthViewModel
+import com.edozie.chatapp.viewmodel.ChatViewModel
 
 
 @Composable
-fun ChatScreen() {
+fun ChatScreen(vm: ChatViewModel, authVm: AuthViewModel = hiltViewModel()) {
 
+    val msgs by vm.messages.collectAsState()
+    val isTyping by vm.typing.collectAsState()
     var input by remember { mutableStateOf("") }
 
     Column(
@@ -45,6 +53,13 @@ fun ChatScreen() {
             reverseLayout = false
         ) {
             // CHAT UI
+            items(msgs) { m ->
+                val isMe = m.senderId == authVm.getCurrentUser()!!.uid
+                MessageBubble(m.text, isMe)
+            }
+            if (isTyping) {
+                item { Text("${vm.otherEmail} is typing...", Modifier.padding(8.dp)) }
+            }
         }
         // Message Box
         Surface(
@@ -68,6 +83,7 @@ fun ChatScreen() {
                     value = input,
                     onValueChange = {
                         input = it
+                        vm.onTyping(it.isNotBlank())
                     },
                     modifier = Modifier.weight(1f),
                     colors = TextFieldDefaults.colors(
@@ -85,6 +101,9 @@ fun ChatScreen() {
                         .clip(RoundedCornerShape(4.dp)),
                     onClick = {
                         // Send message
+                        vm.send(input.trim())
+                        input = ""
+                        vm.onTyping(false)
                     }) {
                     Icon(
                         painter = painterResource(R.drawable.send_text_ic),
