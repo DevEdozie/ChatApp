@@ -2,23 +2,35 @@ package com.edozie.chatapp.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
+import android.util.Base64
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.edozie.chatapp.remote.repository.AuthRepository
 import com.edozie.chatapp.util.AuthState
+import com.edozie.chatapp.util.UserPreferences
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     application: Application,
-    private val repo: AuthRepository
+    private val repo: AuthRepository,
+    private val firestore: FirebaseFirestore,
+    private val firebaseStorage: FirebaseStorage,
+    private val userPrefs: UserPreferences,
 ) : AndroidViewModel(application) {
 
     // Backing properties
@@ -30,6 +42,20 @@ class AuthViewModel @Inject constructor(
     val email = _email.asStateFlow()
     val password = _password.asStateFlow()
     val confirm_password = _confirm_password.asStateFlow()
+
+    // Current FirebaseUser
+//    val currentUser = getCurrentUser()
+
+    // Cached profile via DataStore
+    val userEmail: Flow<String> = userPrefs.userEmail
+    val userPhoto: Flow<String> = userPrefs.userPhotoUrl
+
+    init {
+        // On startup, load from Firestore into DataStore
+        viewModelScope.launch {
+            loadUserProfile()
+        }
+    }
 
     private val prefs by lazy {
         getApplication<Application>().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -53,15 +79,19 @@ class AuthViewModel @Inject constructor(
                 _state.value = AuthState.Authenticated(it)
                 // Save login status to SharedPreferences
                 prefs.edit() { putBoolean("is_logged_in", true) }
+                loadUserProfile()
             }
             .onFailure { _state.value = AuthState.Error(it.message ?: "Login failed") }
     }
 
     fun logout() {
-        repo.logout()
-        _state.value = AuthState.Unauthenticated
-        // Save login status to SharedPreferences
-        prefs.edit() { putBoolean("is_logged_in", false) }
+        viewModelScope.launch {
+            repo.logout()
+            _state.value = AuthState.Unauthenticated
+            // Save login status to SharedPreferences
+            prefs.edit() { putBoolean("is_logged_in", false) }
+            userPrefs.clear()
+        }
     }
 
     // Update functions
@@ -81,6 +111,90 @@ class AuthViewModel @Inject constructor(
     fun getCurrentUser(): FirebaseUser? {
         return repo.currentUser
     }
+
+    // Load and cache profile from Firestore
+    private suspend fun loadUserProfile() {
+        val uid = getCurrentUser()?.uid ?: return
+        val doc = firestore.collection("users")
+            .document(uid)
+            .get()
+            .await()
+        val base64 = doc.getString("photoBase64") ?: ""
+        val email = getCurrentUser()?.email
+        // Save into DataStore
+        userPrefs.saveUserProfile(
+            email = email,
+            photoUrl = base64,     // store the Base64 string
+        )
+    }
+
+//    private suspend fun loadUserProfile() {
+//        val user = getCurrentUser() ?: return
+//        // Fetch Firestore `users/{uid}` doc
+//        val doc = firestore.collection("users")
+//            .document(user.uid)
+//            .get()
+//            .await()
+//        val photoUrl = doc.getString("photoUrl")
+//        val email = user.email
+//        // Save into DataStore
+//        userPrefs.saveUserProfile(
+//            email = email,
+//            photoUrl = photoUrl
+//        )
+//    }
+
+    fun updateProfilePicture(uri: Uri) = viewModelScope.launch {
+        val uid = getCurrentUser()?.uid ?: return@launch
+
+        // 1) Load and compress file into bytes
+        val input = getApplication<Application>().contentResolver.openInputStream(uri)
+        val raw = input!!.readBytes()
+        val base64 = Base64.encodeToString(raw, Base64.NO_WRAP)
+
+        // 2) Save into Firestore document
+        firestore.collection("users")
+            .document(uid)
+            .update("photoBase64", base64)
+            .await()
+
+        // 3) Cache locally
+        userPrefs.saveUserProfile(
+            email = userEmail.firstOrNull(),
+            photoUrl = base64,     // now holds your Base64 blob
+        )
+    }
+
+    // Update profile picture
+//    fun updateProfilePicture(uri: Uri) = viewModelScope.launch {
+//        val uid = getCurrentUser()?.uid ?: return@launch
+//        val ref = firebaseStorage.reference.child("profilePics/$uid.jpg")
+//
+//        // Upload and get snapshot
+////        ref.putFile(uri).await()
+//        val snapshot = ref.putFile(uri).await()
+//
+////        val url = ref.downloadUrl.await().toString()
+//        //  Fetch the download URL from that snapshot
+//        val url = snapshot.storage.downloadUrl.await().toString()
+//        // Update Auth profile & Firestore, then cache
+//        repo.currentUser?.let { user ->
+//            user.updateProfile(
+//                userProfileChangeRequest { photoUri = Uri.parse(url) }
+//            )?.await()
+//        }
+//        // Mirror to Firestore
+//        firestore.collection("users")
+//            .document(uid)
+//            .update("photoUrl", url)
+//            .await()
+//        // Cache locally
+//        userPrefs.saveUserProfile(
+//            email = userEmail.firstOrNull(),
+//            photoUrl = url,
+//        )
+//
+//    }
 
 
 }
