@@ -53,7 +53,7 @@ fun ChatThreadItem(thread: ChatThreadEntity, onClick: () -> Unit) {
                 imageVector = Icons.Default.AccountCircle,
                 contentDescription = "Avatar",
                 modifier = Modifier.size(48.dp),
-                tint = Color.Magenta
+                tint = Color(0xFF007AFF)
             )
             Spacer(modifier = Modifier.size(12.dp))
             Column(

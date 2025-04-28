@@ -201,7 +201,7 @@ fun SignupScreen(
                     .fillMaxWidth()
                     .height(48.dp),
                 enabled = state != AuthState.Loading,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007AFF)),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 if (state is AuthState.Loading) CircularProgressIndicator(Modifier.size(24.dp))

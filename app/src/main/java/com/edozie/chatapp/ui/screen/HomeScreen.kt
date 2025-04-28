@@ -69,8 +69,8 @@ fun HomeScreen(networkObserver: NetworkObserver) {
             userCurrentRoute == CustomBottomNavBar.Profile.route
 
 
-    val shouldShowAppIcon =
-        userCurrentRoute == CustomBottomNavBar.Chats.route
+//    val shouldShowAppIcon =
+//        userCurrentRoute == CustomBottomNavBar.Chats.route
 
 
     val shouldShowBackArrow =
@@ -97,14 +97,14 @@ fun HomeScreen(networkObserver: NetworkObserver) {
                 },
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (shouldShowAppIcon) {
-                            Image(
-                                painter = painterResource(id = R.drawable.chat_app_logo_ic),
-                                contentDescription = "App Logo",
-                                modifier = Modifier.size(40.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                        }
+//                        if (shouldShowAppIcon) {
+//                            Image(
+//                                painter = painterResource(id = R.drawable.chat_app_logo_ic),
+//                                contentDescription = "App Logo",
+//                                modifier = Modifier.size(40.dp)
+//                            )
+//                            Spacer(Modifier.width(8.dp))
+//                        }
 
                         if (shouldShowTitle) {
                             Text(
