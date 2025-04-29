@@ -3,7 +3,12 @@ package com.edozie.chatapp.viewmodel
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.os.Build
 import android.util.Base64
+import androidx.annotation.RequiresApi
+import java.io.ByteArrayOutputStream
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,13 +28,13 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import androidx.core.graphics.scale
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     application: Application,
     private val repo: AuthRepository,
     private val firestore: FirebaseFirestore,
-    private val firebaseStorage: FirebaseStorage,
     private val userPrefs: UserPreferences,
 ) : AndroidViewModel(application) {
 
@@ -128,29 +133,27 @@ class AuthViewModel @Inject constructor(
         )
     }
 
-//    private suspend fun loadUserProfile() {
-//        val user = getCurrentUser() ?: return
-//        // Fetch Firestore `users/{uid}` doc
-//        val doc = firestore.collection("users")
-//            .document(user.uid)
-//            .get()
-//            .await()
-//        val photoUrl = doc.getString("photoUrl")
-//        val email = user.email
-//        // Save into DataStore
-//        userPrefs.saveUserProfile(
-//            email = email,
-//            photoUrl = photoUrl
-//        )
-//    }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     fun updateProfilePicture(uri: Uri) = viewModelScope.launch {
         val uid = getCurrentUser()?.uid ?: return@launch
 
+        // TEST v-1
         // 1) Load and compress file into bytes
-        val input = getApplication<Application>().contentResolver.openInputStream(uri)
-        val raw = input!!.readBytes()
-        val base64 = Base64.encodeToString(raw, Base64.NO_WRAP)
+//        val input = getApplication<Application>().contentResolver.openInputStream(uri)
+//        val raw = input!!.readBytes()
+//        val base64 = Base64.encodeToString(raw, Base64.NO_WRAP)
+
+        // TEST v-2
+        // Pseudocode: scale the bitmap down to e.g. 200×200 px
+        val source = ImageDecoder.createSource(getApplication<Application>().contentResolver, uri)
+        val original = ImageDecoder.decodeBitmap(source)
+        val thumbnail = original.scale(200, 200)
+        val baos = ByteArrayOutputStream()
+        thumbnail.compress(Bitmap.CompressFormat.JPEG, 70, baos)
+        val bytes = baos.toByteArray()
+        val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+
 
         // 2) Save into Firestore document
         firestore.collection("users")
@@ -164,37 +167,6 @@ class AuthViewModel @Inject constructor(
             photoUrl = base64,     // now holds your Base64 blob
         )
     }
-
-    // Update profile picture
-//    fun updateProfilePicture(uri: Uri) = viewModelScope.launch {
-//        val uid = getCurrentUser()?.uid ?: return@launch
-//        val ref = firebaseStorage.reference.child("profilePics/$uid.jpg")
-//
-//        // Upload and get snapshot
-////        ref.putFile(uri).await()
-//        val snapshot = ref.putFile(uri).await()
-//
-////        val url = ref.downloadUrl.await().toString()
-//        //  Fetch the download URL from that snapshot
-//        val url = snapshot.storage.downloadUrl.await().toString()
-//        // Update Auth profile & Firestore, then cache
-//        repo.currentUser?.let { user ->
-//            user.updateProfile(
-//                userProfileChangeRequest { photoUri = Uri.parse(url) }
-//            )?.await()
-//        }
-//        // Mirror to Firestore
-//        firestore.collection("users")
-//            .document(uid)
-//            .update("photoUrl", url)
-//            .await()
-//        // Cache locally
-//        userPrefs.saveUserProfile(
-//            email = userEmail.firstOrNull(),
-//            photoUrl = url,
-//        )
-//
-//    }
 
 
 }

@@ -28,10 +28,10 @@ object AppModule {
     fun provideFirebaseFirestore(): FirebaseFirestore =
         FirebaseFirestore.getInstance()
 
-    @Provides
-    @Singleton
-    fun provideFirebaseStorage(): FirebaseStorage =
-        FirebaseStorage.getInstance()
+//    @Provides
+//    @Singleton
+//    fun provideFirebaseStorage(): FirebaseStorage =
+//        FirebaseStorage.getInstance()
 
 
     @Provides
