@@ -1,6 +1,8 @@
 package com.edozie.chatapp.ui.screen
 
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,8 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -52,6 +57,7 @@ import com.edozie.chatapp.util.NetworkObserver
 import com.edozie.chatapp.viewmodel.ChatViewModel
 
 
+@RequiresApi(Build.VERSION_CODES.P)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(networkObserver: NetworkObserver) {
@@ -69,12 +75,12 @@ fun HomeScreen(networkObserver: NetworkObserver) {
             userCurrentRoute == CustomBottomNavBar.Profile.route
 
 
-    val shouldShowAppIcon =
-        userCurrentRoute == CustomBottomNavBar.Chats.route
+//    val shouldShowAppIcon =
+//        userCurrentRoute == CustomBottomNavBar.Chats.route
 
 
     val shouldShowBackArrow =
-        userCurrentRoute?.startsWith("chat/") == true
+        userCurrentRoute?.startsWith("chat/") == true || userCurrentRoute == CustomBottomNavBar.Profile.route
 
     val showBottomBar = when {
         userCurrentRoute == CustomBottomNavBar.Chats.route -> true
@@ -97,20 +103,24 @@ fun HomeScreen(networkObserver: NetworkObserver) {
                 },
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (shouldShowAppIcon) {
-                            Image(
-                                painter = painterResource(id = R.drawable.chat_app_logo_ic),
-                                contentDescription = "App Logo",
-                                modifier = Modifier.size(40.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                        }
+//                        if (shouldShowAppIcon) {
+//                            Image(
+//                                painter = painterResource(id = R.drawable.chat_app_logo_ic),
+//                                contentDescription = "App Logo",
+//                                modifier = Modifier.size(40.dp)
+//                            )
+//                            Spacer(Modifier.width(8.dp))
+//                        }
 
                         if (shouldShowTitle) {
                             Text(
                                 text = screenTitle,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.Black
+                                color = Color.Black,
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 20.sp,
+                                letterSpacing = 0.15.sp,
+                                lineHeight = 28.sp
                             )
                         }
                     }

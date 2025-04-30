@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,7 +57,8 @@ fun SplashScreen(navController: NavController) {
         Image(
             painter = painterResource(id = R.drawable.chat_app_logo_ic),
             contentDescription = "App Logo",
-            modifier = Modifier.size(128.dp)
+            modifier = Modifier.size(128.dp),
+            colorFilter = ColorFilter.tint(Color(0xFF007AFF))
         )
     }
 }
